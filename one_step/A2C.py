@@ -49,6 +49,6 @@ for i_episode in range(MAX_EPISODE):
             else:
                 running_reward = running_reward * 0.95 + ep_rs_sum * 0.05
             if i_episode % 100 == 0:
-                print(running_reward)
+                print(ep_rs_sum)
             break
 
