@@ -1,8 +1,8 @@
 import tensorflow as tf
 import numpy as np
 import gym
-np.random.seed(2)
-tf.set_random_seed(2)  # reproducible
+np.random.seed(3)
+tf.set_random_seed(3)  # reproducible
 
 running_reward = 0
 class Model(object):
@@ -12,16 +12,17 @@ class Model(object):
         lr: learning rate
         clip_norm: unknown
         '''
+        self.ep_nums =  0
         self.x = tf.placeholder(tf.float32, shape = [None, observation_dim])
         self.lr = lr
         self.env = env
         self.sess = sess
-        self.clip_norm = 0.5
-        self.trainer = tf.train.RMSPropOptimizer(learning_rate=self.lr, decay=0.90, epsilon=1e-5)
+        self.trainer = tf.train.RMSPropOptimizer(learning_rate=self.lr, decay=0.99, epsilon=1e-5)
         self.start_state = env.reset()
         self.start_reward = 0
+        self.gamma = 0.9
         # actor and critic share several layers which extract the features of observation
-        shared_dense = tf.layers.dense(self.x, 20, tf.nn.relu)
+        shared_dense = tf.layers.dense(self.x, 64, tf.nn.relu)
 
         # actor
         policy_logits  = tf.layers.dense(shared_dense, action_dim)
@@ -31,7 +32,7 @@ class Model(object):
         self.value_function = tf.layers.dense(shared_dense, 1)
 
         '''
-        R : value function estimator. calc value loss
+        R : discounted return
         A : actions
         ADV : advantage estimator
         '''
@@ -46,21 +47,21 @@ class Model(object):
         neg_log_policy = -tf.log(tf.clip_by_value(self.policy, 1e-7, 1))
         policy_loss = tf.reduce_mean(tf.reduce_sum(neg_log_policy*action_ont_hot, axis=1)*self.ADV)
 
-        self.entropy = tf.reduce_mean(tf.reduce_sum(self.policy*neg_log_policy, axis=1))
-        self.total_loss =  0.5 * value_loss + policy_loss +  0.01*self.entropy
+        entropy = tf.reduce_mean(tf.reduce_sum(self.policy*neg_log_policy, axis=1))
+        self.total_loss =  0.5 * value_loss + policy_loss +  0.01*entropy
 
         #trainning operator
         #"norm" remains unknown
         local_vars = tf.trainable_variables()
         gradients = tf.gradients(self.total_loss, local_vars)
         global_norm = tf.global_norm(gradients)
-        gradients, _ = tf.clip_by_global_norm(gradients, self.clip_norm)
+        gradients, _ = tf.clip_by_global_norm(gradients, global_norm)
     
         self.train_op = self.trainer.apply_gradients(zip(gradients, local_vars))
 
     def train(self):
-        obs, actions, rewards, advs = self.run()
-        feed_dict = {self.x:obs, self.A: actions, self.R: rewards, self.ADV: advs}
+        obs, actions, returns, advs = self.run()
+        feed_dict = {self.x:obs, self.A: actions, self.R: returns, self.ADV: advs}
         self.sess.run(self.train_op, feed_dict=feed_dict)
 
     def act(self, s):
@@ -74,9 +75,6 @@ class Model(object):
         '''
         n_step return
         '''
-        # how to select the start state and start reward ?
-        # here I just use the initialization but it has to be changed
-
         s = self.start_state
         done = False
         states = []
@@ -85,7 +83,6 @@ class Model(object):
         total_reward = self.start_reward
 
         for _ in range(n_steps):
-            self.env.render()
             a = self.act(s)
             s_next, r, done, _ = self.env.step(a)
             states.append(s) 
@@ -96,13 +93,16 @@ class Model(object):
             total_reward += r
             s = s_next
             if done:
+                self.ep_nums += 1
                 s = self.env.reset()
                 global running_reward
                 if running_reward == 0:
                     running_reward = total_reward
                 else:
                     running_reward = running_reward * 0.95 + total_reward * 0.05
-                print(running_reward)
+
+                if (self.ep_nums % 100 == 0):
+                    print(running_reward)
 
                 total_reward = 0
                 break
@@ -127,7 +127,7 @@ class Model(object):
         adv: advantage estimator
         '''
         for i in range(n - 1, -1, -1):
-            R = rewards[i] + 0.99 * R
+            R = rewards[i] + self.gamma * R
             rewards[i] = R
             advs[i] = R - v[i]
 

@@ -29,7 +29,7 @@ for i_episode in range(MAX_EPISODE):
     timesteps = 0
     track_r = []
     while True:
-        env.render()
+        # env.render()
         a = actor.act(s)
         s_, r, done, info = env.step(a)
         if done:

@@ -15,7 +15,7 @@ class Actor(object):
         self.td_error = tf.placeholder(tf.float32, None, "td_error")  # TD_error
 
         with tf.variable_scope('Actor'):
-            l1 = tf.layers.dense(self.s, 20, tf.nn.relu, name='l1')
+            l1 = tf.layers.dense(self.s, 64, tf.nn.relu, name='l1')
             self.acts_prob = tf.layers.dense(l1, action_dim, tf.nn.softmax, name='acts_prob')
 
         with tf.variable_scope('exp_v'):
@@ -43,7 +43,7 @@ class Critic(object):
         self.r = tf.placeholder(tf.float32, None, 'r')
 
         with tf.variable_scope('Critic'):
-            l1 = tf.layers.dense(self.s, 20, tf.nn.relu, name='l1')
+            l1 = tf.layers.dense(self.s, 64, tf.nn.relu, name='l1')
             self.v = tf.layers.dense(l1, 1, name='V')
 
         with tf.variable_scope('squared_TD_error'):
