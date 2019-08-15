@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import gym
-from network import Actor, Critic
+from network import Actor, Critic, ACNet
 OUTPUT_GRAPH = False
 MAX_EPISODE = 5000
 MAX_EP_STEPS = 2000   # maximum time step in one episode
@@ -18,8 +18,9 @@ N_F = env.observation_space.shape[0]
 N_A = env.action_space.n
 print(N_A) 
 sess = tf.Session()
-actor = Actor(sess, observation_dim=N_F, action_dim=N_A, lr=LR_A)
-critic = Critic(sess, observation_dim=N_F, lr=LR_C)
+# actor = Actor(sess, observation_dim=N_F, action_dim=N_A, lr=LR_A)
+# critic = Critic(sess, observation_dim=N_F, lr=LR_C)
+model = ACNet(sess, observation_dim=N_F, action_dim=N_A, lr=LR_A)
 
 sess.run(tf.global_variables_initializer())
 
@@ -30,14 +31,13 @@ for i_episode in range(MAX_EPISODE):
     track_r = []
     while True:
         # env.render()
-        a = actor.act(s)
+        a = model.act(s)
         s_, r, done, info = env.step(a)
         if done:
             r = -20
         track_r.append(r)
 
-        td_error = critic.learn(s, r, s_)
-        actor.learn(s, a, td_error)
+        model.learn(s, a, r, s_)
 
         s = s_
         timesteps += 1
