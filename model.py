@@ -43,12 +43,15 @@ class Model(object):
         #loss function
         value_loss = 0.5 * tf.reduce_mean(tf.square(tf.squeeze(self.value_function) - self.R))
 
+        self.tst1 = tf.squeeze(self.value_function) - self.R
+        self.tst2 = self.ADV
+
         action_ont_hot = tf.one_hot(self.A, action_dim, dtype=tf.float32)
         neg_log_policy = -tf.log(tf.clip_by_value(self.policy, 1e-7, 1))
         policy_loss = tf.reduce_mean(tf.reduce_sum(neg_log_policy*action_ont_hot, axis=1)*self.ADV)
 
         entropy = tf.reduce_mean(tf.reduce_sum(self.policy*neg_log_policy, axis=1))
-        self.total_loss =  0.5 * value_loss + policy_loss +  0.01*entropy
+        self.total_loss =  0.5 * value_loss + policy_loss +  0.0*entropy
 
         #trainning operator
         #"norm" remains unknown
@@ -63,6 +66,9 @@ class Model(object):
         obs, actions, returns, advs = self.run()
         feed_dict = {self.x:obs, self.A: actions, self.R: returns, self.ADV: advs}
         self.sess.run(self.train_op, feed_dict=feed_dict)
+        print(self.sess.run(self.tst1, feed_dict=feed_dict))
+        print(self.sess.run(self.tst2, feed_dict=feed_dict))
+        print("-------------------------------")
 
     def act(self, s):
         '''
@@ -71,7 +77,7 @@ class Model(object):
         actions = self.sess.run(self.policy, feed_dict={self.x : [s]})
         return np.random.choice(len(actions[0]), p=actions[0]) 
 
-    def run(self, n_steps=5):
+    def run(self, n_steps=1):
         '''
         n_step return
         '''

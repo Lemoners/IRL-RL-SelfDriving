@@ -77,8 +77,17 @@ class ACNet(object):
         self.exp_v = -tf.reduce_mean(log_prob * self.td_error)  # advantage (TD_error) guided 
         
         self.loss = 0.5 * self.mse_loss + self.exp_v
+        self.trainer= tf.train.RMSPropOptimizer(learning_rate=lr, decay=0.99, epsilon=1e-5)
 
-        self.train_op = tf.train.AdamOptimizer(lr).minimize(self.loss)
+        # neg_log_policy = -tf.log(tf.clip_by_value(self.policy, 1e-7, 1))
+        # policy_loss = tf.reduce_mean(tf.reduce_sum(neg_log_policy*action_ont_hot, axis=1)*self.ADV)
+
+        local_vars = tf.trainable_variables()
+        gradients = tf.gradients(self.loss, local_vars)
+        global_norm = tf.global_norm(gradients)
+        gradients, _ = tf.clip_by_global_norm(gradients, global_norm)
+    
+        self.train_op = self.trainer.apply_gradients(zip(gradients, local_vars))
 
     def learn(self, s, a, r, s_):
         v_ = self.sess.run(self.v, {self.s: s_[None]})
