@@ -117,7 +117,7 @@ class Model(object):
         n = len(states)
         v = self.sess.run(self.value_function, feed_dict={self.x: states})
 
-        rewards = np.zeros(n)
+        rewards = np.array(rewards)
         advs = np.zeros(n)
         actions = np.array(actions)
         '''
