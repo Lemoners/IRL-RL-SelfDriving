@@ -20,12 +20,15 @@ class MyTorcsProcess(object):
             Donnot know how to deal with headless now
         """
         try:
-            if(self.proc==None):
-                self.proc = subprocess.Popen(sim_path)
+            if(self.proc!=None):
+                self.quit()
+
+            self.proc = subprocess.Popen(sim_path.split(" "))
+                # print("proc",self.proc)
             # os.system(sim_path)
-            print("Torcs subprocess started")
+            # print("Torcs subprocess started")
             # time.sleep(3)
-            os.system("sh /home/lemon/Workspace/Torcs/MyTorcsEnv/torcs/mytorcs/test.sh")
+            # os.system("sh /home/lemon/Workspace/Torcs/MyTorcsEnv/torcs/mytorcs/test.sh")
         except Exception as e:
             print("Fail to excute Torcs subprocess: ",end="")
             print(e)
@@ -37,7 +40,7 @@ class MyTorcsProcess(object):
         Shutdown unity environment
         """
         if self.proc is not None:
-            print("closing Torcs sim subprocess")
+            # print("closing Torcs sim subprocess")
 
             self.proc.kill()
             # self.proc.wait()

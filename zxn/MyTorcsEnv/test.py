@@ -10,23 +10,20 @@ EPISODE = 100
 
 for i in range(EPISODE):
     print("new Episode")
-    ob = env.reset()
+    ob = env.reset(on_driving_reset=True)
     print("Env reset done")
-
-    while True:
+    i = 0
+    while (i < 50):
         action = [0.0,1.0,0.0, 0.0]
         ob, reward, done, info = env.step(action)
-
+        i += 1
+        print(i)
         if done:
             break;
 
 env.close()
 
-# # from gym import envs
-# # envids = [spec.id for spec in envs.registry.all()]
-# # for envid in sorted(envids):
-# #     if("torcs" in str(envid).lower()):
-# #         print(envid)
+x
 
 
 
